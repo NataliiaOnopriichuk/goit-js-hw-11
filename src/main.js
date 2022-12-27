@@ -4,7 +4,7 @@ import "simplelightbox/dist/simple-lightbox.min.css";
 import {refs} from './refs'
 import { NewsApiService } from './api'
 import { createCard, addCards } from './markup'
-
+console.log(window);
 
 Notify.init({
     width: '350px',
@@ -12,38 +12,60 @@ Notify.init({
     fontSize: '20px',
 });
 
+let lastCard = ''
+
 const newsApiService = new NewsApiService()
 
 refs.form.addEventListener('submit', onSearch)
-refs.loadMore.addEventListener('click', onLoadBtn)
+
 
 async function onSearch(e) {
     e.preventDefault()
 
-    addBtn();
     clearContainer()
     newsApiService.resetPage()
     try {
-        if (e.target.searchQuery.value === '') return
+        if (e.target.searchQuery.value === '') return Notify.failure('Sorry, there are no images matching your search query. Please try again.')
 newsApiService.searchQuery = e.target.searchQuery.value.trim()
-         const response = await newsApiService.getData(this.searchQuery)  
-         const markup = createCard(response.data.hits)
-      addCards(refs.divGallery, markup)
+        const data = await newsApiService.getData(this.searchQuery)  
+        const markup = createCard(data.hits)
+        Notify.info(`Hooray! We found ${data.totalHits} images.`);
+        addCards(refs.divGallery, markup)
+        lastCard = refs.divGallery.lastChild;
+        observer.observe(lastCard);
+        refs.form.reset()
+        newsApiService.gallery = new SimpleLightbox('.photo-card a');
+   
             
     } catch (error) {
        Notify.failure('Sorry, there are no images matching your search query. Please try again.');
         }
 }
 
-// let gallery = new SimpleLightbox('.gallery a');
-
-
-async function onLoadBtn(e){
-    try {
+let callback = (entries, observer) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
     newsApiService.incrementPage();
-         const response = await newsApiService.getData(this.searchQuery)  
-         const markup = createCard(response.data.hits)
-      addCards(refs.divGallery, markup)
+        onLoad()
+      observer.unobserve(entry.target);
+    }
+  });
+};
+
+const options = {
+  threshold: 0.1,
+};
+
+let observer = new IntersectionObserver(callback, options);
+
+async function onLoad(){
+    try {
+         const data = await newsApiService.getData(this.searchQuery)  
+         const markup = createCard(data.hits)
+        addCards(refs.divGallery, markup)
+        lastCard = refs.divGallery.lastChild;
+        observer.observe(lastCard);
+        newsApiService.gallery.refresh()
 } catch (error) {
     console.log(error);
 }
@@ -53,9 +75,8 @@ function clearContainer() {
   refs.divGallery.innerHTML = "";
 }
 
-   function addBtn(){
-  refs.loadMore.classList.remove("is-hidden");
-};
+
+
 
 
 

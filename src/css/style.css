@@ -24,6 +24,7 @@
 input {
   height: 30px;
   width: 300px;
+  outline: none;
 }
 
 button {
