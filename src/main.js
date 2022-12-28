@@ -62,7 +62,7 @@ let observer = new IntersectionObserver(callback, options);
 
 async function onLoad() {
     try {
-        const data = await newsApiService.getData(this.searchQuery)  
+        const data = await newsApiService.getData()  
         const markup = createCard(data.hits)
         addCards(refs.divGallery, markup)
         lastCard = refs.divGallery.lastChild;
