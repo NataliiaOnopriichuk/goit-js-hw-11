@@ -9,18 +9,24 @@ export class NewsApiService {
       this.searchQuery = "";
       this.gallery = ''
       this.page = 1;
+      this.per_page = 40
+      this.lastPage = false
   }
     
-    async getData(searchQuery) {
+    async getData() {
   try {
-      const { data } = await axios.get(`/api/?key=${API_KEY}&q=${this.searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&per_page=40&${this.page}`);
+      const { data } = await axios.get(`/api/?key=${API_KEY}&q=${this.searchQuery}&image_type=photo&orientation=horizontal&safesearch=true&per_page=${this.per_page}&${this.page}`);
       if (data.total === 0) throw new Error(error.message)
+      this.checkLastPage(data.totalHits)
       return data
   } catch (error) {
    throw new Error (error.message)
   }
     }
     
+    checkLastPage(totalHits) {
+    this.lastPage = totalHits <= (this.page + 1) * this.per_page
+}
 
   incrementPage() {
     this.page += 1;

@@ -4,7 +4,6 @@ import "simplelightbox/dist/simple-lightbox.min.css";
 import {refs} from './refs'
 import { NewsApiService } from './api'
 import { createCard, addCards } from './markup'
-console.log(window);
 
 Notify.init({
     width: '350px',
@@ -13,6 +12,7 @@ Notify.init({
 });
 
 let lastCard = ''
+let totalPage = 0
 
 const newsApiService = new NewsApiService()
 
@@ -24,10 +24,11 @@ async function onSearch(e) {
 
     clearContainer()
     newsApiService.resetPage()
+    newsApiService.lastPage = false
     try {
         if (e.target.searchQuery.value === '') return Notify.failure('Sorry, there are no images matching your search query. Please try again.')
-newsApiService.searchQuery = e.target.searchQuery.value.trim()
-        const data = await newsApiService.getData(this.searchQuery)  
+        newsApiService.searchQuery = e.target.searchQuery.value.trim()
+        const data = await newsApiService.getData()  
         const markup = createCard(data.hits)
         Notify.info(`Hooray! We found ${data.totalHits} images.`);
         addCards(refs.divGallery, markup)
@@ -45,23 +46,24 @@ newsApiService.searchQuery = e.target.searchQuery.value.trim()
 let callback = (entries, observer) => {
   entries.forEach((entry) => {
     if (entry.isIntersecting) {
-    newsApiService.incrementPage();
-        onLoad()
+        newsApiService.incrementPage();
+        if (!newsApiService.lastPage) onLoad()
+       else Notify.info("We're sorry, but you've reached the end of search results.");
       observer.unobserve(entry.target);
     }
   });
 };
 
 const options = {
-  threshold: 0.1,
+  threshold: 1.0,
 };
 
 let observer = new IntersectionObserver(callback, options);
 
-async function onLoad(){
+async function onLoad() {
     try {
-         const data = await newsApiService.getData(this.searchQuery)  
-         const markup = createCard(data.hits)
+        const data = await newsApiService.getData(this.searchQuery)  
+        const markup = createCard(data.hits)
         addCards(refs.divGallery, markup)
         lastCard = refs.divGallery.lastChild;
         observer.observe(lastCard);
